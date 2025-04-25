@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login / Signup</title>
+</head>
+<body>
+    <h2>Signup</h2>
+    <form id="signupForm">
+        Name: <input type="text" name="name"><br>
+        Email: <input type="email" name="email"><br>
+        Password: <input type="password" name="password"><br>
+        <button type="submit">Signup</button>
+    </form>
+
+    <h2>Login</h2>
+    <form id="loginForm">
+        Email: <input type="email" name="email"><br>
+        Password: <input type="password" name="password"><br>
+        <button type="submit">Login</button>
+    </form>
+
+    <script>
+        const baseUrl = "http://localhost:8000"; // adjust if hosted elsewhere
+
+        document.getElementById('signupForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const body = JSON.stringify(Object.fromEntries(formData));
+            const res = await fetch(`${baseUrl}/signup`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: body
+            });
+            alert(await res.text());
+        });
+
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const body = JSON.stringify(Object.fromEntries(formData));
+            const res = await fetch(`${baseUrl}/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: body
+            });
+            const data = await res.json();
+            alert('JWT Token: ' + data.token);
+        });
+
+    </script>
+</body>
+</html>
