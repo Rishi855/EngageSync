@@ -5,8 +5,20 @@ import (
 	"log"
 	"net/http"
 	"time"
-	STATIC "websocket-demo/VAR"
+	// "os"
+	// "github.com/joho/godotenv"
+	// STATIC "websocket-demo/VAR"
 )
+
+// var SCHEMA string
+
+// func init() {
+// 	err := godotenv.Load()
+// 	if err != nil {
+// 		log.Fatal("Error loading .env file")
+// 	}
+// 	SCHEMA = os.Getenv("DB_SCHEMA")
+// }
 
 type Comment struct {
 	ID          int       `json:"id"`
@@ -25,7 +37,7 @@ func GetAllCommentsByIdeaIDHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	query := `SELECT id, idea_id, user_id, comment_text, created_at 
-			  FROM ` + STATIC.TANENT + `.comments 
+			  FROM ` + SCHEMA + `.comments 
 			  WHERE idea_id = $1 ORDER BY created_at ASC`
 
 	rows, err := queryRows(query, ideaID)
@@ -65,8 +77,8 @@ func CreateCommentHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("STATIC.TANENT: %s", STATIC.TANENT)
-	insertQuery := `INSERT INTO ` + STATIC.TANENT + `.comments 
+	log.Printf("SCHEMA: %s", SCHEMA)
+	insertQuery := `INSERT INTO ` + SCHEMA + `.comments 
                     (idea_id, user_id, comment_text, created_at) 
                     VALUES ($1, $2, $3, $4)`
 	log.Printf("Executing query: %s", insertQuery)
@@ -77,7 +89,7 @@ func CreateCommentHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updateQuery := `UPDATE ` + STATIC.TANENT + `.ideas 
+	updateQuery := `UPDATE ` + SCHEMA + `.ideas 
                     SET comments = comments + 1 
                     WHERE id = $1`
 	log.Printf("Executing update query: %s", updateQuery)
@@ -95,25 +107,25 @@ func DeleteCommentHandler(w http.ResponseWriter, r *http.Request) {
 	commentID := r.URL.Query().Get("id")
 	if commentID == "" {
 		http.Error(w, "Missing comment id", http.StatusBadRequest)
-		return	
+		return
 	}
 
 	var ideaID int
-	selectQuery := `SELECT idea_id FROM ` + STATIC.TANENT + `.comments WHERE id = $1`
+	selectQuery := `SELECT idea_id FROM ` + SCHEMA + `.comments WHERE id = $1`
 	err := db.QueryRow(selectQuery, commentID).Scan(&ideaID)
 	if err != nil {
 		http.Error(w, "Comment not found", http.StatusNotFound)
 		return
 	}
 
-	deleteQuery := `DELETE FROM ` + STATIC.TANENT + `.comments WHERE id = $1`
+	deleteQuery := `DELETE FROM ` + SCHEMA + `.comments WHERE id = $1`
 	_, err = execQuery(deleteQuery, commentID)
 	if err != nil {
 		http.Error(w, "Error deleting comment", http.StatusInternalServerError)
 		return
 	}
 
-	updateQuery := `UPDATE ` + STATIC.TANENT + `.ideas 
+	updateQuery := `UPDATE ` + SCHEMA + `.ideas 
 					SET comments = comments - 1 
 					WHERE id = $1`
 	_, err = execQuery(updateQuery, ideaID)

@@ -2,10 +2,24 @@ package main
 
 import (
 	"encoding/json"
+	// "log"
 	"net/http"
+	// "os"
 	"time"
-	STATIC "websocket-demo/VAR" // Assuming this is where TANENT is declared
+	// STATIC "websocket-demo/VAR" // Assuming this is where TANENT is declared
+
+	// "github.com/joho/godotenv"
 )
+
+// var SCHEMA string
+
+// func init() {
+// 	err := godotenv.Load()
+// 	if err != nil {
+// 		log.Fatal("Error loading .env file")
+// 	}
+// 	SCHEMA = os.Getenv("DB_SCHEMA")
+// }
 
 type Idea struct {
 	ID        int       `json:"id"`
@@ -21,7 +35,7 @@ type Idea struct {
 func GetAllIdeasHandler(w http.ResponseWriter, r *http.Request) {
 	query := `
 		SELECT id, title, user_id, created_at, content, total_likes, total_comments 
-		FROM ` + STATIC.TANENT + `.ideas
+		FROM ` + SCHEMA + `.ideas
 	`
 	rows, err := queryRows(query)
 	if err != nil {
@@ -53,7 +67,7 @@ func CreateIdeaHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	query := `
-	INSERT INTO ` + STATIC.TANENT + `.ideas 
+	INSERT INTO ` + SCHEMA + `.ideas 
 	(title, user_id, created_at, content, total_likes, total_comments) 
 	VALUES ($1, $2, $3, $4, $5, $6)
 	RETURNING id`
@@ -77,7 +91,7 @@ func DeleteIdeaHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	query := `
-		DELETE FROM ` + STATIC.TANENT + `.ideas 
+		DELETE FROM ` + SCHEMA + `.ideas 
 		WHERE id = $1
 	`
 	_, err := execQuery(query, ideaID)
