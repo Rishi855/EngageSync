@@ -15,7 +15,6 @@ import (
 
 func main() {
 	// Load environment variables from .env
-	// Load environment variables from .env
 	currentDir, _ := os.Getwd()
 	envPath := currentDir + "/.env"
 	if err := godotenv.Load(envPath); err != nil {
@@ -77,5 +76,29 @@ func main() {
 		log.Fatalf("Migration error: %v", migrationErr)
 	}
 
-	log.Println("Migration", os.Args[1], "executed successfully")
+	// Log the current migration version
+	version, _, err := m.Version()
+	if err != nil {
+		log.Fatalf("Error fetching migration version: %v", err)
+	}
+	log.Printf("Migration %s executed successfully. Current version: %d", os.Args[1], version)
+
+	// Get the current migration version applied in the database
+	currentVersion, _, err := m.Version()
+	if err != nil {
+		log.Fatalf("Error fetching current migration version: %v", err)
+	}
+	log.Printf("Currently applied migration version: %d", currentVersion)
+
+	// Optional: Log output to a file
+	logFile, err := os.OpenFile("migration_log.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Fatalf("Error opening log file: %v", err)
+	}
+	defer logFile.Close()
+
+	// Set output to log file as well
+	log.SetOutput(logFile)
+	log.Println("Logging migration details to migration_log.txt")
+	log.Printf("Migration %s executed successfully. Current version: %d", os.Args[1], currentVersion)
 }

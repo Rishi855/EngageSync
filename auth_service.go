@@ -12,21 +12,34 @@ import (
 )
 
 type User struct {
-	ID       int    `json:"id"`
-	TanentId string `json:"tanent_id"`
-	Name     string `json:"name"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	ID        int       `json:"id"`
+	TanentId  string    `json:"tanent_id"`
+	Name      string    `json:"name"`
+	Email     string    `json:"email"`
+	IsAdmin   bool      `json:"is_admin"`
+	CreatedAt time.Time `json:"created_at"`
+	Password  string    `json:"password"`
+}
+type CustomClaims struct {
+	jwt.RegisteredClaims
+	IsAdmin   bool      `json:"isAdmin"`
+	CreatedAt time.Time `json:"createdAt"`
 }
 
 var jwtKey = []byte("my_secret_key")
+
 func signupHandler(w http.ResponseWriter, r *http.Request) {
 	var user User
+	// Decode the incoming request body
 	json.NewDecoder(r.Body).Decode(&user)
 
+	// Set the current time for createdAt
+	createdAt := time.Now()
+
 	_, err := db.Exec(
-		`INSERT INTO users (tenant_id, name, email, password) VALUES ('kanaka', $1, $2, $3)`,
-		user.Name, user.Email, user.Password,
+		`INSERT INTO users (tenant_id, name, email, is_admin, created_at, password) 
+		VALUES ('kanaka', $1, $2, $3, $4, $5)`,
+		user.Name, user.Email, user.IsAdmin, createdAt, user.Password,
 	)
 	if err != nil {
 		log.Printf("Signup error: %v", err)
@@ -38,33 +51,45 @@ func signupHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Return success response
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode("User created")
 }
-
 func loginHandler(w http.ResponseWriter, r *http.Request) {
 	var creds User
 	json.NewDecoder(r.Body).Decode(&creds)
 
 	var storedUser User
-	err := db.QueryRow(`SELECT id, "name", email, "password" FROM users WHERE email=$1`, creds.Email).Scan(&storedUser.ID, &storedUser.Name, &storedUser.Email, &storedUser.Password)
+	// Retrieve the user from the database
+	err := db.QueryRow(`SELECT id, "name", email, "password", is_admin, created_at FROM users WHERE email=$1`, creds.Email).
+		Scan(&storedUser.ID, &storedUser.Name, &storedUser.Email, &storedUser.Password, &storedUser.IsAdmin, &storedUser.CreatedAt)
+
 	if err != nil {
 		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
 		return
 	}
 
+	// Check password (ensure to uncomment bcrypt logic when implementing hashing)
 	// err = bcrypt.CompareHashAndPassword([]byte(storedUser.Password), []byte(creds.Password))
 	if err != nil {
 		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
 		return
 	}
 
+	// Set token expiration time
 	expirationTime := time.Now().Add(24 * time.Hour)
-	claims := &jwt.RegisteredClaims{
-		ExpiresAt: jwt.NewNumericDate(expirationTime),
-		Subject:   fmt.Sprint(storedUser.ID),
+
+	// Create custom claims
+	claims := &CustomClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expirationTime),
+			Subject:   fmt.Sprint(storedUser.ID),
+		},
+		IsAdmin:   storedUser.IsAdmin,
+		CreatedAt: storedUser.CreatedAt, // Keep it as time.Time, not a string
 	}
 
+	// Create the token with custom claims
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString(jwtKey)
 	if err != nil {
@@ -72,6 +97,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Send the token as a response
 	json.NewEncoder(w).Encode(map[string]string{"token": tokenString})
 }
 
@@ -85,7 +111,8 @@ func authMiddleware(next http.HandlerFunc) http.HandlerFunc {
 
 		tokenString := authHeader[len("Bearer "):]
 
-		claims := &jwt.RegisteredClaims{}
+		// Use CustomClaims to parse the token
+		claims := &CustomClaims{}
 		token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 			return jwtKey, nil
 		})
@@ -94,8 +121,14 @@ func authMiddleware(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		// Optionally: set user ID in context for later use
+		// Accessing custom claims (isAdmin, createdAt)
+		isAdmin := claims.IsAdmin
+		createdAt := claims.CreatedAt
+
+		// Optionally: set user ID and other claims in context for later use
 		r.Header.Set("UserID", claims.Subject)
+		r.Header.Set("IsAdmin", fmt.Sprint(isAdmin))              // Optional, if needed in the request context
+		r.Header.Set("CreatedAt", createdAt.Format(time.RFC3339)) // Optional, if needed in the request context
 
 		next(w, r)
 	}

@@ -1,0 +1,14 @@
+2025/04/26 19:59:03 Logging migration details to migration_log.txt
+2025/04/26 19:59:03 Migration up executed successfully. Current version: 3
+2025/04/26 20:01:11 Logging migration details to migration_log.txt
+2025/04/26 20:01:11 Migration up executed successfully. Current version: 3
+2025/04/26 20:16:59 Logging migration details to migration_log.txt
+2025/04/26 20:16:59 Migration up executed successfully. Current version: 4
+2025/04/26 20:17:29 Logging migration details to migration_log.txt
+2025/04/26 20:17:29 Migration down executed successfully. Current version: 3
+2025/04/26 22:45:05 Logging migration details to migration_log.txt
+2025/04/26 22:45:05 Migration up executed successfully. Current version: 4
+2025/04/26 22:56:48 Logging migration details to migration_log.txt
+2025/04/26 22:56:48 Migration up executed successfully. Current version: 4
+2025/04/27 00:43:44 Logging migration details to migration_log.txt
+2025/04/27 00:43:44 Migration up executed successfully. Current version: 4

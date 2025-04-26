@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	// "golang.org/x/crypto/bcrypt"
@@ -37,39 +38,31 @@ func init() {
 	}
 }
 
+// Main function
 func main() {
-	defer func() {
-		if r := recover(); r != nil {
-			log.Fatalf("Server crashed with error: %v", r)
-		}
-	}()
+	// Create a new router
+	r := mux.NewRouter()
 
-	mux := http.NewServeMux()
+	// Prefix `/api/` for all API routes
+	apiRouter := r.PathPrefix("/api").Subrouter()
 
-	// Serve Description.md at root "/"
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "Description.md")
-	})
+	// Define routes under `/api/` and apply CORS middleware
+	apiRouter.HandleFunc("/signup", enableCORS(signupHandler)).Methods("POST")
+	apiRouter.HandleFunc("/login", enableCORS(loginHandler)).Methods("POST")
 
-	// API routes under /api/
-	apiMux := http.NewServeMux()
+	apiRouter.HandleFunc("/ideas", enableCORS(authMiddleware(GetAllIdeasHandler))).Methods("GET")
+	apiRouter.HandleFunc("/idea", enableCORS(authMiddleware(CreateIdeaHandler))).Methods("POST")
+	apiRouter.HandleFunc("/idea/delete", enableCORS(authMiddleware(DeleteIdeaHandler))).Methods("DELETE")
 
-	apiMux.HandleFunc("/signup", enableCORS(signupHandler))
-	apiMux.HandleFunc("/login", enableCORS(loginHandler))
+	apiRouter.HandleFunc("/comments", enableCORS(authMiddleware(GetAllCommentsByIdeaIDHandler))).Methods("GET")
+	apiRouter.HandleFunc("/comment", enableCORS(authMiddleware(CreateCommentHandler))).Methods("POST")
+	apiRouter.HandleFunc("/comment/delete", enableCORS(authMiddleware(DeleteCommentHandler))).Methods("DELETE")
 
-	apiMux.HandleFunc("/ideas", enableCORS(authMiddleware(GetAllIdeasHandler)))
-	apiMux.HandleFunc("/idea", enableCORS(authMiddleware(CreateIdeaHandler)))
-	apiMux.HandleFunc("/idea/delete", enableCORS(authMiddleware(DeleteIdeaHandler)))
+	apiRouter.HandleFunc("/projects", enableCORS(authMiddleware(GetAllProjectsHandler))).Methods("GET")
+	apiRouter.HandleFunc("/project", enableCORS(authMiddleware(CreateProjectHandler))).Methods("POST")
+	apiRouter.HandleFunc("/project/delete", enableCORS(authMiddleware(DeleteProjectHandler))).Methods("DELETE")
 
-	apiMux.HandleFunc("/comments", enableCORS(authMiddleware(GetAllCommentsByIdeaIDHandler)))
-	apiMux.HandleFunc("/comment", enableCORS(authMiddleware(CreateCommentHandler)))
-	apiMux.HandleFunc("/comment/delete", enableCORS(authMiddleware(DeleteCommentHandler)))
-
-	// Prefix /api routes
-	mux.Handle("/api/", http.StripPrefix("/api", apiMux))
-
+	// Start the server
 	log.Println("Server started at :8000")
-	if err := http.ListenAndServe(":8000", mux); err != nil {
-		log.Fatalf("Server stopped with error: %v", err)
-	}
+	log.Fatal(http.ListenAndServe(":8000", r))
 }
