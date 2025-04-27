@@ -48,7 +48,7 @@ func main() {
 
 	// Define routes under `/api/` and apply CORS middleware
 	apiRouter.HandleFunc("/signup", enableCORS(signupHandler)).Methods("POST")
-	apiRouter.HandleFunc("/login", enableCORS(loginHandler)).Methods("POST")
+	apiRouter.HandleFunc("/login", enableCORS(loginHandler)).Methods("GET")
 
 	apiRouter.HandleFunc("/ideas", enableCORS(authMiddleware(GetAllIdeasHandler))).Methods("GET")
 	apiRouter.HandleFunc("/idea", enableCORS(authMiddleware(CreateIdeaHandler))).Methods("POST")
@@ -61,6 +61,14 @@ func main() {
 	apiRouter.HandleFunc("/projects", enableCORS(authMiddleware(GetAllProjectsHandler))).Methods("GET")
 	apiRouter.HandleFunc("/project", enableCORS(authMiddleware(CreateProjectHandler))).Methods("POST")
 	apiRouter.HandleFunc("/project/delete", enableCORS(authMiddleware(DeleteProjectHandler))).Methods("DELETE")
+
+	apiRouter.HandleFunc("/project/members", enableCORS(authMiddleware(GetAllProjectMembersHandler))).Methods("GET")
+	apiRouter.HandleFunc("/project/member", enableCORS(authMiddleware(CreateProjectMemberHandler))).Methods("POST")
+	apiRouter.HandleFunc("/project/member/delete", enableCORS(authMiddleware(DeleteProjectMemberHandler))).Methods("DELETE")
+
+	apiRouter.HandleFunc("/technologies", enableCORS(authMiddleware(GetAllTechnologiesHandler))).Methods("GET")
+	apiRouter.HandleFunc("/roles", enableCORS(authMiddleware(GetAllRolesHandler))).Methods("GET")
+	apiRouter.HandleFunc("/all/users", enableCORS(authMiddleware(GetAllUsersHandler))).Methods("GET")
 
 	// Start the server
 	log.Println("Server started at :8000")

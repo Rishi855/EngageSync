@@ -20,6 +20,7 @@ type User struct {
 	CreatedAt time.Time `json:"created_at"`
 	Password  string    `json:"password"`
 }
+
 type CustomClaims struct {
 	jwt.RegisteredClaims
 	IsAdmin   bool      `json:"isAdmin"`
