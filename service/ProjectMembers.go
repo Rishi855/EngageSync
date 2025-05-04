@@ -1,8 +1,8 @@
-package main
+package service
 
 import (
 	"encoding/json"
-	Constant "websocket-demo/VAR"
+	Constant "github.com/Rishi855/engagesync/VAR"
 
 	// "log"
 	"net/http"

@@ -1,41 +1,22 @@
 package main
 
 import (
-	"database/sql"
-	"fmt"
 	"log"
 	"net/http"
-	"os"
 
 	"github.com/gorilla/mux"
-	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
-	// "golang.org/x/crypto/bcrypt"
+
+	service "github.com/Rishi855/engagesync/service"
+
+	// quiz "github.com/Rishi855/engagesync/quiz"
+
 )
 
 var SCHEMA string
 
 func init() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
-	user := os.Getenv("DB_USER")
-	password := os.Getenv("DB_PASSWORD")
-	dbname := os.Getenv("DB_NAME")
-	sslmode := os.Getenv("DB_SSLMODE")
-	SCHEMA = os.Getenv("DB_SCHEMA")
-
-	connStr := fmt.Sprintf("user=%s password=%s dbname=%s sslmode=%s", user, password, dbname, sslmode)
-
-	db, err = sql.Open("postgres", connStr)
-	if err != nil {
-		log.Fatal("Failed to open DB:", err)
-	}
-
-	if err = db.Ping(); err != nil {
-		log.Fatal("Failed to ping DB:", err)
-	}
+	service.InitConfig()
 }
 
 // Main function
@@ -47,28 +28,37 @@ func main() {
 	apiRouter := r.PathPrefix("/api").Subrouter()
 
 	// Define routes under `/api/` and apply CORS middleware
-	apiRouter.HandleFunc("/signup", enableCORS(signupHandler)).Methods("POST")
-	apiRouter.HandleFunc("/login", enableCORS(loginHandler)).Methods("GET")
+	apiRouter.HandleFunc("/signup", service.EnableCORS(service.SignupHandler)).Methods("POST")
+	apiRouter.HandleFunc("/login", service.EnableCORS(service.LoginHandler)).Methods("GET")
 
-	apiRouter.HandleFunc("/ideas", enableCORS(authMiddleware(GetAllIdeasHandler))).Methods("GET")
-	apiRouter.HandleFunc("/idea", enableCORS(authMiddleware(CreateIdeaHandler))).Methods("POST")
-	apiRouter.HandleFunc("/idea/delete", enableCORS(authMiddleware(DeleteIdeaHandler))).Methods("DELETE")
+	apiRouter.HandleFunc("/ideas", service.EnableCORS(service.AuthMiddleware(service.GetAllIdeasHandler))).Methods("GET")
+	apiRouter.HandleFunc("/idea", service.EnableCORS(service.AuthMiddleware(service.CreateIdeaHandler))).Methods("POST")
+	apiRouter.HandleFunc("/idea/delete", service.EnableCORS(service.AuthMiddleware(service.DeleteIdeaHandler))).Methods("DELETE")
 
-	apiRouter.HandleFunc("/comments", enableCORS(authMiddleware(GetAllCommentsByIdeaIDHandler))).Methods("GET")
-	apiRouter.HandleFunc("/comment", enableCORS(authMiddleware(CreateCommentHandler))).Methods("POST")
-	apiRouter.HandleFunc("/comment/delete", enableCORS(authMiddleware(DeleteCommentHandler))).Methods("DELETE")
+	apiRouter.HandleFunc("/comments", service.EnableCORS(service.AuthMiddleware(service.GetAllCommentsByIdeaIDHandler))).Methods("GET")
+	apiRouter.HandleFunc("/comment", service.EnableCORS(service.AuthMiddleware(service.CreateCommentHandler))).Methods("POST")
+	apiRouter.HandleFunc("/comment/delete", service.EnableCORS(service.AuthMiddleware(service.DeleteCommentHandler))).Methods("DELETE")
 
-	apiRouter.HandleFunc("/projects", enableCORS(authMiddleware(GetAllProjectsHandler))).Methods("GET")
-	apiRouter.HandleFunc("/project", enableCORS(authMiddleware(CreateProjectHandler))).Methods("POST")
-	apiRouter.HandleFunc("/project/delete", enableCORS(authMiddleware(DeleteProjectHandler))).Methods("DELETE")
+	apiRouter.HandleFunc("/projects", service.EnableCORS(service.AuthMiddleware(service.GetAllProjectsHandler))).Methods("GET")
+	apiRouter.HandleFunc("/project", service.EnableCORS(service.AuthMiddleware(service.CreateProjectHandler))).Methods("POST")
+	apiRouter.HandleFunc("/project/delete", service.EnableCORS(service.AuthMiddleware(service.DeleteProjectHandler))).Methods("DELETE")
 
-	apiRouter.HandleFunc("/project/members", enableCORS(authMiddleware(GetAllProjectMembersHandler))).Methods("GET")
-	apiRouter.HandleFunc("/project/member", enableCORS(authMiddleware(CreateProjectMemberHandler))).Methods("POST")
-	apiRouter.HandleFunc("/project/member/delete", enableCORS(authMiddleware(DeleteProjectMemberHandler))).Methods("DELETE")
+	apiRouter.HandleFunc("/project/members", service.EnableCORS(service.AuthMiddleware(service.GetAllProjectMembersHandler))).Methods("GET")
+	apiRouter.HandleFunc("/project/member", service.EnableCORS(service.AuthMiddleware(service.CreateProjectMemberHandler))).Methods("POST")
+	apiRouter.HandleFunc("/project/member/delete", service.EnableCORS(service.AuthMiddleware(service.DeleteProjectMemberHandler))).Methods("DELETE")
 
-	apiRouter.HandleFunc("/technologies", enableCORS(authMiddleware(GetAllTechnologiesHandler))).Methods("GET")
-	apiRouter.HandleFunc("/roles", enableCORS(authMiddleware(GetAllRolesHandler))).Methods("GET")
-	apiRouter.HandleFunc("/all/users", enableCORS(authMiddleware(GetAllUsersHandler))).Methods("GET")
+	apiRouter.HandleFunc("/technologies", service.EnableCORS(service.AuthMiddleware(service.GetAllTechnologiesHandler))).Methods("GET")
+	apiRouter.HandleFunc("/roles", service.EnableCORS(service.AuthMiddleware(service.GetAllRolesHandler))).Methods("GET")
+	apiRouter.HandleFunc("/all/users", service.EnableCORS(service.AuthMiddleware(service.GetAllUsersHandler))).Methods("GET")
+
+
+	apiRouter.HandleFunc("/add/user", service.EnableCORS(service.AuthMiddleware(service.AddUserHandler))).Methods("POST")	
+
+	// go quiz.HubInstance.Run()
+
+	// r.HandleFunc("/ws/quiz", quiz.QuizWebSocketHandler) // WebSocket entry
+	// apiRouter.HandleFunc("/send-question", service.EnableCORS(service.AuthMiddleware(quiz.SendQuestionHandler))).Methods("POST")
+	// apiRouter.HandleFunc("/start-quiz", service.EnableCORS(service.AuthMiddleware(quiz.StartQuizHandler))).Methods("POST")
 
 	// Start the server
 	log.Println("Server started at :8000")

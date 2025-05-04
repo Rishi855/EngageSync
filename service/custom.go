@@ -1,9 +1,9 @@
-package main
+package service
 
 import (
 	"encoding/json"
 	"net/http"
-	Constant "websocket-demo/VAR"
+	Constant "github.com/Rishi855/engagesync/VAR"
 )
 
 func GetAllTechnologiesHandler(w http.ResponseWriter, r *http.Request) {

@@ -1,4 +1,4 @@
-package main
+package service
 
 import (
 	"encoding/json"
@@ -10,6 +10,10 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 )
+func init() {
+    InitConfig()
+}
+
 
 type User struct {
 	ID        int       `json:"id"`
@@ -29,7 +33,7 @@ type CustomClaims struct {
 
 var jwtKey = []byte("my_secret_key")
 
-func signupHandler(w http.ResponseWriter, r *http.Request) {
+func SignupHandler(w http.ResponseWriter, r *http.Request) {
 	var user User
 	// Decode the incoming request body
 	json.NewDecoder(r.Body).Decode(&user)
@@ -56,7 +60,7 @@ func signupHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode("User created")
 }
-func loginHandler(w http.ResponseWriter, r *http.Request) {
+func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	var creds User
 	json.NewDecoder(r.Body).Decode(&creds)
 
@@ -102,7 +106,36 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"token": tokenString})
 }
 
-func authMiddleware(next http.HandlerFunc) http.HandlerFunc {
+func AddUserHandler(w http.ResponseWriter, r *http.Request) {
+
+	var user User
+	// Decode the incoming request body
+	json.NewDecoder(r.Body).Decode(&user)
+
+	// Set the current time for createdAt
+	createdAt := time.Now()
+
+	_, err := db.Exec(
+		`INSERT INTO users (tenant_id, name, email, is_admin, created_at, password) 
+		VALUES ('kanaka', $1, $2, $3, $4, $5)`,
+		user.Name, user.Email, user.IsAdmin, createdAt, user.Password,
+	)
+	if err != nil {
+		log.Printf("User create error: %v", err)
+		if strings.Contains(err.Error(), "duplicate key") {
+			http.Error(w, "Email already exists", http.StatusConflict)
+			return
+		}
+		http.Error(w, "Error creating user", http.StatusInternalServerError)
+		return
+	}
+
+	// Return success response
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode("User Added")
+}
+
+func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
@@ -135,7 +168,7 @@ func authMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func enableCORS(next http.HandlerFunc) http.HandlerFunc {
+func EnableCORS(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*") // Or specify exact origin
 		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")

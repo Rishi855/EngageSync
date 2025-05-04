@@ -1,10 +1,11 @@
-package main
+package service
 
 import (
 	"encoding/json"
 	"log"
 	"net/http"
 	"time"
+	
 	// "os"
 	// "github.com/joho/godotenv"
 	// STATIC "websocket-demo/VAR"
