@@ -1,0 +1,613 @@
+openapi: 3.0.0
+info:
+  title: EngageSync API
+  description: API documentation for EngageSync application
+  version: 1.0.0
+servers:
+  - url: http://localhost:8000
+    description: Development server
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: admin@kanaka.com
+        password:
+          type: string
+          example: "1234"
+    
+    UserCreateRequest:
+      type: object
+      required:
+        - name
+        - email
+        - password
+      properties:
+        name:
+          type: string
+          example: John Doe
+        email:
+          type: string
+          format: email
+          example: john.doe@example.com
+        password:
+          type: string
+          example: password123
+        photo_url:
+          type: string
+          nullable: true
+          example: null
+        birth_date:
+          type: string
+          format: date
+          nullable: true
+          example: "1990-01-01"
+        department:
+          type: string
+          nullable: true
+          example: Engineering
+    
+    IdeaCreateRequest:
+      type: object
+      required:
+        - title
+        - description
+        - submitted_by
+        - is_anonymous
+      properties:
+        title:
+          type: string
+          example: My New Idea 1
+        description:
+          type: string
+          example: This is a description of my idea
+        submitted_by:
+          type: string
+          format: uuid
+          example: 20d7ad3d-6f25-4141-9ae8-f4d6889a180f
+        is_anonymous:
+          type: boolean
+          example: false
+    
+    CommentCreateRequest:
+      type: object
+      required:
+        - idea_id
+        - commented_by
+        - comment_text
+      properties:
+        idea_id:
+          type: string
+          format: uuid
+          example: 10f5ffb9-3997-4582-bcce-61d8fd3e8fda
+        commented_by:
+          type: string
+          format: uuid
+          example: 20d7ad3d-6f25-4141-9ae8-f4d6889a180f
+        comment_text:
+          type: string
+          example: This is a comment
+    
+    ProjectCreateRequest:
+      type: object
+      required:
+        - name
+        - description
+        - manager_id
+      properties:
+        name:
+          type: string
+          example: New Project
+        description:
+          type: string
+          example: Project Description
+        manager_id:
+          type: string
+          format: uuid
+          example: 20d7ad3d-6f25-4141-9ae8-f4d6889a180f
+    
+    ProjectMemberCreateRequest:
+      type: object
+      required:
+        - project_id
+        - user_id
+        - role
+      properties:
+        project_id:
+          type: string
+          format: uuid
+          example: ab9fb856-df63-48c5-bbe9-0a8bd97984f5
+        user_id:
+          type: string
+          format: uuid
+          example: 20d7ad3d-6f25-4141-9ae8-f4d6889a180f
+        role:
+          type: string
+          enum: [Admin, Member]
+          example: Admin
+
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        user:
+          type: object
+
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        photo_url:
+          type: string
+          nullable: true
+        birth_date:
+          type: string
+          format: date
+          nullable: true
+        department:
+          type: string
+          nullable: true
+        role:
+          type: string
+        tenant_id:
+          type: string
+          format: uuid
+
+    IdeaResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        submitted_by:
+          type: string
+          format: uuid
+        is_anonymous:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        tenant_id:
+          type: string
+          format: uuid
+
+    CommentResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        idea_id:
+          type: string
+          format: uuid
+        commented_by:
+          type: string
+          format: uuid
+        comment_text:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        tenant_id:
+          type: string
+          format: uuid
+
+    ProjectResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        manager_id:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        tenant_id:
+          type: string
+          format: uuid
+
+    ProjectMemberResponse:
+      type: object
+      properties:
+        project_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        role:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        tenant_id:
+          type: string
+          format: uuid
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/login:
+    get:
+      summary: Login to the system
+      tags:
+        - Authentication
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Invalid credentials
+  
+  /api/add/user:
+    post:
+      summary: Add a new user by organization admin
+      tags:
+        - Users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreateRequest'
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          description: Invalid input
+        '401':
+          description: Unauthorized
+  
+  /api/all/users:
+    get:
+      summary: Get all organization users
+      tags:
+        - Users
+      responses:
+        '200':
+          description: List of all users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserResponse'
+        '401':
+          description: Unauthorized
+  
+  /api/idea:
+    post:
+      summary: Create a new idea
+      tags:
+        - Ideas
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IdeaCreateRequest'
+      responses:
+        '201':
+          description: Idea created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdeaResponse'
+        '400':
+          description: Invalid input
+        '401':
+          description: Unauthorized
+  
+  /api/ideas:
+    get:
+      summary: Get all ideas
+      tags:
+        - Ideas
+      responses:
+        '200':
+          description: List of all ideas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/IdeaResponse'
+        '401':
+          description: Unauthorized
+  
+  /api/idea/delete:
+    delete:
+      summary: Delete an idea
+      tags:
+        - Ideas
+      parameters:
+        - name: id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          example: 3d5c87c1-b32c-4c74-96b2-4e84bf11d917
+      responses:
+        '200':
+          description: Idea deleted successfully
+        '400':
+          description: Invalid input
+        '401':
+          description: Unauthorized
+        '404':
+          description: Idea not found
+  
+  /api/comment:
+    post:
+      summary: Create a comment on an idea
+      tags:
+        - Comments
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommentCreateRequest'
+      responses:
+        '201':
+          description: Comment created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentResponse'
+        '400':
+          description: Invalid input
+        '401':
+          description: Unauthorized
+  
+  /api/comments:
+    get:
+      summary: Get all comments on an idea
+      tags:
+        - Comments
+      parameters:
+        - name: id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: ID of the idea
+          example: 10f5ffb9-3997-4582-bcce-61d8fd3e8fda
+      responses:
+        '200':
+          description: List of comments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CommentResponse'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Idea not found
+  
+  /api/comment/delete:
+    delete:
+      summary: Delete a comment on an idea
+      tags:
+        - Comments
+      parameters:
+        - name: id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          example: 376f5a56-679b-42a3-b10a-d36f48588e4e
+      responses:
+        '200':
+          description: Comment deleted successfully
+        '400':
+          description: Invalid input
+        '401':
+          description: Unauthorized
+        '404':
+          description: Comment not found
+  
+  /api/project:
+    post:
+      summary: Create a new project
+      tags:
+        - Projects
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectCreateRequest'
+      responses:
+        '201':
+          description: Project created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectResponse'
+        '400':
+          description: Invalid input
+        '401':
+          description: Unauthorized
+  
+  /api/projects:
+    get:
+      summary: Get all projects
+      tags:
+        - Projects
+      responses:
+        '200':
+          description: List of all projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProjectResponse'
+        '401':
+          description: Unauthorized
+  
+  /api/project/delete:
+    delete:
+      summary: Delete a project
+      tags:
+        - Projects
+      parameters:
+        - name: id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          example: 2696df14-5d51-4f5c-9d65-b3d22fce41ea
+      responses:
+        '200':
+          description: Project deleted successfully
+        '400':
+          description: Invalid input
+        '401':
+          description: Unauthorized
+        '404':
+          description: Project not found
+  
+  /api/project/member:
+    post:
+      summary: Add a member to a project
+      tags:
+        - Project Members
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectMemberCreateRequest'
+      responses:
+        '201':
+          description: Project member added successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectMemberResponse'
+        '400':
+          description: Invalid input
+        '401':
+          description: Unauthorized
+  
+  /api/project/members:
+    get:
+      summary: Get all members of a project
+      tags:
+        - Project Members
+      parameters:
+        - name: project_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          example: ab9fb856-df63-48c5-bbe9-0a8bd97984f5
+      responses:
+        '200':
+          description: List of project members
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProjectMemberResponse'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Project not found
+  
+  /api/project/member/delete:
+    delete:
+      summary: Remove a member from a project
+      tags:
+        - Project Members
+      parameters:
+        - name: project_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          example: ab9fb856-df63-48c5-bbe9-0a8bd97984f5
+        - name: user_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          example: 20d7ad3d-6f25-4141-9ae8-f4d6889a180f
+      responses:
+        '200':
+          description: Project member removed successfully
+        '400':
+          description: Invalid input
+        '401':
+          description: Unauthorized
+        '404':
+          description: Project member not found

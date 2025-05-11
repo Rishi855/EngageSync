@@ -1,0 +1,588 @@
+{
+	"info": {
+		"_postman_id": "b5b52f50-5441-4cac-ac48-1f3a270470c2",
+		"name": "EngageSyncAPI",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "26082520",
+		"_collection_link": "https://engagesyncapi-2539.postman.co/workspace/EngageSyncAPI~5f713589-2b1b-461e-b8ce-d23487594bf5/collection/26082520-b5b52f50-5441-4cac-ac48-1f3a270470c2?action=share&source=collection_link&creator=26082520"
+	},
+	"item": [
+		{
+			"name": "CustomApi",
+			"item": [
+				{
+					"name": "login",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@kanaka.com\",\n    \"password\": \"1234\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8000/api/login",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add user by org admin",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFkbWluQGthbmFrYS5jb20iLCJleHAiOjE3NDcwMzEzMDAsInJvbGUiOiJBZG1pbiIsInN1YiI6IjIwZDdhZDNkLTZmMjUtNDE0MS05YWU4LWY0ZDY4ODlhMTgwZiIsInRlbmFudF9pZCI6ImY1ODJhYTJkLTQzYzEtNDQ3NS1iMzViLWNkMmQ0ODJjNDYwMiJ9.x3qOquBGPo48WTvgM97Dvxtapv6YKjq7Jd09yijqQWw"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"John Doe\",\n    \"email\": \"john.doe@example.com\",\n    \"password\": \"password123\",\n    \"photo_url\": null, // you can pass url\n    \"birth_date\": \"1990-01-01\", // null you can pass null\n    \"department\": \"Engineering\" // null you can pass null\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8000/api/add/user",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"add",
+								"user"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get all org user by org admin token",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFkbWluQGthbmFrYS5jb20iLCJleHAiOjE3NDcwMzEzMDAsInJvbGUiOiJBZG1pbiIsInN1YiI6IjIwZDdhZDNkLTZmMjUtNDE0MS05YWU4LWY0ZDY4ODlhMTgwZiIsInRlbmFudF9pZCI6ImY1ODJhYTJkLTQzYzEtNDQ3NS1iMzViLWNkMmQ0ODJjNDYwMiJ9.x3qOquBGPo48WTvgM97Dvxtapv6YKjq7Jd09yijqQWw"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8000/api/all/users",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"all",
+								"users"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "IdeasApi",
+			"item": [
+				{
+					"name": "Delete idea",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFkbWluQGthbmFrYS5jb20iLCJleHAiOjE3NDY5OTA5MzEsInJvbGUiOiJBZG1pbiIsInN1YiI6IjIwZDdhZDNkLTZmMjUtNDE0MS05YWU4LWY0ZDY4ODlhMTgwZiIsInRlbmFudF9pZCI6ImY1ODJhYTJkLTQzYzEtNDQ3NS1iMzViLWNkMmQ0ODJjNDYwMiJ9.wYpbUSvYb4kJm6u0oP_NzqNr8vTjxrYSq0AlOKH2OcU"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8000/api/idea/delete?id=3d5c87c1-b32c-4c74-96b2-4e84bf11d917",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"idea",
+								"delete"
+							],
+							"query": [
+								{
+									"key": "id",
+									"value": "3d5c87c1-b32c-4c74-96b2-4e84bf11d917"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create idea",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFkbWluQGthbmFrYS5jb20iLCJleHAiOjE3NDY5OTA5MzEsInJvbGUiOiJBZG1pbiIsInN1YiI6IjIwZDdhZDNkLTZmMjUtNDE0MS05YWU4LWY0ZDY4ODlhMTgwZiIsInRlbmFudF9pZCI6ImY1ODJhYTJkLTQzYzEtNDQ3NS1iMzViLWNkMmQ0ODJjNDYwMiJ9.wYpbUSvYb4kJm6u0oP_NzqNr8vTjxrYSq0AlOKH2OcU"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"My New Idea 1\",\n    \"description\": \"This is a description of my idea\",\n    \"submitted_by\": \"20d7ad3d-6f25-4141-9ae8-f4d6889a180f\",\n    \"is_anonymous\": false\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8000/api/idea",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"idea"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get all idea",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFkbWluQGthbmFrYS5jb20iLCJleHAiOjE3NDY5OTA5MzEsInJvbGUiOiJBZG1pbiIsInN1YiI6IjIwZDdhZDNkLTZmMjUtNDE0MS05YWU4LWY0ZDY4ODlhMTgwZiIsInRlbmFudF9pZCI6ImY1ODJhYTJkLTQzYzEtNDQ3NS1iMzViLWNkMmQ0ODJjNDYwMiJ9.wYpbUSvYb4kJm6u0oP_NzqNr8vTjxrYSq0AlOKH2OcU"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8000/api/ideas",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"ideas"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get all comments on idea",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFkbWluQGthbmFrYS5jb20iLCJleHAiOjE3NDY5OTA5MzEsInJvbGUiOiJBZG1pbiIsInN1YiI6IjIwZDdhZDNkLTZmMjUtNDE0MS05YWU4LWY0ZDY4ODlhMTgwZiIsInRlbmFudF9pZCI6ImY1ODJhYTJkLTQzYzEtNDQ3NS1iMzViLWNkMmQ0ODJjNDYwMiJ9.wYpbUSvYb4kJm6u0oP_NzqNr8vTjxrYSq0AlOKH2OcU"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8000/api/comments?id=10f5ffb9-3997-4582-bcce-61d8fd3e8fda",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"comments"
+							],
+							"query": [
+								{
+									"key": "id",
+									"value": "10f5ffb9-3997-4582-bcce-61d8fd3e8fda"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create comment on idea",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFkbWluQGthbmFrYS5jb20iLCJleHAiOjE3NDY5OTA5MzEsInJvbGUiOiJBZG1pbiIsInN1YiI6IjIwZDdhZDNkLTZmMjUtNDE0MS05YWU4LWY0ZDY4ODlhMTgwZiIsInRlbmFudF9pZCI6ImY1ODJhYTJkLTQzYzEtNDQ3NS1iMzViLWNkMmQ0ODJjNDYwMiJ9.wYpbUSvYb4kJm6u0oP_NzqNr8vTjxrYSq0AlOKH2OcU"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"idea_id\": \"10f5ffb9-3997-4582-bcce-61d8fd3e8fda\",\n    \"commented_by\": \"20d7ad3d-6f25-4141-9ae8-f4d6889a180f\",\n    \"comment_text\": \"This is a another comment\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8000/api/comment",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"comment"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete comment on idea",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFkbWluQGthbmFrYS5jb20iLCJleHAiOjE3NDY5OTA5MzEsInJvbGUiOiJBZG1pbiIsInN1YiI6IjIwZDdhZDNkLTZmMjUtNDE0MS05YWU4LWY0ZDY4ODlhMTgwZiIsInRlbmFudF9pZCI6ImY1ODJhYTJkLTQzYzEtNDQ3NS1iMzViLWNkMmQ0ODJjNDYwMiJ9.wYpbUSvYb4kJm6u0oP_NzqNr8vTjxrYSq0AlOKH2OcU"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8000/api/comment/delete?id=376f5a56-679b-42a3-b10a-d36f48588e4e",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"comment",
+								"delete"
+							],
+							"query": [
+								{
+									"key": "id",
+									"value": "376f5a56-679b-42a3-b10a-d36f48588e4e"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "ProjectsApi",
+			"item": [
+				{
+					"name": "Get all projects",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFkbWluQGthbmFrYS5jb20iLCJleHAiOjE3NDY5OTA5MzEsInJvbGUiOiJBZG1pbiIsInN1YiI6IjIwZDdhZDNkLTZmMjUtNDE0MS05YWU4LWY0ZDY4ODlhMTgwZiIsInRlbmFudF9pZCI6ImY1ODJhYTJkLTQzYzEtNDQ3NS1iMzViLWNkMmQ0ODJjNDYwMiJ9.wYpbUSvYb4kJm6u0oP_NzqNr8vTjxrYSq0AlOKH2OcU"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8000/api/projects",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"projects"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create project",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFkbWluQGthbmFrYS5jb20iLCJleHAiOjE3NDY5OTA5MzEsInJvbGUiOiJBZG1pbiIsInN1YiI6IjIwZDdhZDNkLTZmMjUtNDE0MS05YWU4LWY0ZDY4ODlhMTgwZiIsInRlbmFudF9pZCI6ImY1ODJhYTJkLTQzYzEtNDQ3NS1iMzViLWNkMmQ0ODJjNDYwMiJ9.wYpbUSvYb4kJm6u0oP_NzqNr8vTjxrYSq0AlOKH2OcU"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"New Project\",\n    \"description\": \"Project another Description\",\n    \"manager_id\": \"20d7ad3d-6f25-4141-9ae8-f4d6889a180f\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8000/api/project",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"project"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete project",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFkbWluQGthbmFrYS5jb20iLCJleHAiOjE3NDY5OTA5MzEsInJvbGUiOiJBZG1pbiIsInN1YiI6IjIwZDdhZDNkLTZmMjUtNDE0MS05YWU4LWY0ZDY4ODlhMTgwZiIsInRlbmFudF9pZCI6ImY1ODJhYTJkLTQzYzEtNDQ3NS1iMzViLWNkMmQ0ODJjNDYwMiJ9.wYpbUSvYb4kJm6u0oP_NzqNr8vTjxrYSq0AlOKH2OcU"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8000/api/project/delete?id=2696df14-5d51-4f5c-9d65-b3d22fce41ea",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"project",
+								"delete"
+							],
+							"query": [
+								{
+									"key": "id",
+									"value": "2696df14-5d51-4f5c-9d65-b3d22fce41ea"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get all project member on project id",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFkbWluQGthbmFrYS5jb20iLCJleHAiOjE3NDY5OTA5MzEsInJvbGUiOiJBZG1pbiIsInN1YiI6IjIwZDdhZDNkLTZmMjUtNDE0MS05YWU4LWY0ZDY4ODlhMTgwZiIsInRlbmFudF9pZCI6ImY1ODJhYTJkLTQzYzEtNDQ3NS1iMzViLWNkMmQ0ODJjNDYwMiJ9.wYpbUSvYb4kJm6u0oP_NzqNr8vTjxrYSq0AlOKH2OcU"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8000/api/project/members?project_id=ab9fb856-df63-48c5-bbe9-0a8bd97984f5",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"project",
+								"members"
+							],
+							"query": [
+								{
+									"key": "project_id",
+									"value": "ab9fb856-df63-48c5-bbe9-0a8bd97984f5"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add project member by project id",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFkbWluQGthbmFrYS5jb20iLCJleHAiOjE3NDY5OTA5MzEsInJvbGUiOiJBZG1pbiIsInN1YiI6IjIwZDdhZDNkLTZmMjUtNDE0MS05YWU4LWY0ZDY4ODlhMTgwZiIsInRlbmFudF9pZCI6ImY1ODJhYTJkLTQzYzEtNDQ3NS1iMzViLWNkMmQ0ODJjNDYwMiJ9.wYpbUSvYb4kJm6u0oP_NzqNr8vTjxrYSq0AlOKH2OcU"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"project_id\": \"ab9fb856-df63-48c5-bbe9-0a8bd97984f5\",\n    \"user_id\": \"20d7ad3d-6f25-4141-9ae8-f4d6889a180f\",\n    \"role\": \"Admin\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8000/api/project/member",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"project",
+								"member"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete project member on project id",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFkbWluQGthbmFrYS5jb20iLCJleHAiOjE3NDY5OTA5MzEsInJvbGUiOiJBZG1pbiIsInN1YiI6IjIwZDdhZDNkLTZmMjUtNDE0MS05YWU4LWY0ZDY4ODlhMTgwZiIsInRlbmFudF9pZCI6ImY1ODJhYTJkLTQzYzEtNDQ3NS1iMzViLWNkMmQ0ODJjNDYwMiJ9.wYpbUSvYb4kJm6u0oP_NzqNr8vTjxrYSq0AlOKH2OcU"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8000/api/project/member/delete?project_id=ab9fb856-df63-48c5-bbe9-0a8bd97984f5&user_id=20d7ad3d-6f25-4141-9ae8-f4d6889a180f",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"project",
+								"member",
+								"delete"
+							],
+							"query": [
+								{
+									"key": "project_id",
+									"value": "ab9fb856-df63-48c5-bbe9-0a8bd97984f5"
+								},
+								{
+									"key": "user_id",
+									"value": "20d7ad3d-6f25-4141-9ae8-f4d6889a180f"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer"
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}
