@@ -202,6 +202,7 @@ func AddUserHandler(w http.ResponseWriter, r *http.Request) {
 type AuthenticatedUser struct {
 	Role     string
 	TenantID string
+	Email    string
 }
 
 func ExtractUserFromToken(r *http.Request) (*AuthenticatedUser, error) {
@@ -230,9 +231,14 @@ func ExtractUserFromToken(r *http.Request) (*AuthenticatedUser, error) {
 		return nil, fmt.Errorf("missing tenant ID in token")
 	}
 
+	email, ok := claims["email"].(string)
+	if !ok {
+		return nil, fmt.Errorf("missing email in token")
+	}
 	return &AuthenticatedUser{
 		Role:     role,
 		TenantID: tenantID,
+		Email:    email,
 	}, nil
 }
 

@@ -52,6 +52,8 @@ func main() {
 
 	apiRouter.HandleFunc("/add/user", service.EnableCORS(service.AuthMiddleware(service.AddUserHandler))).Methods("POST")
 
+	apiRouter.HandleFunc("/add/organization", service.EnableCORS(service.AuthMiddleware(service.AddOrganizationHandler))).Methods("POST")
+	apiRouter.HandleFunc("/organizations", service.EnableCORS(service.AuthMiddleware(service.GetOrganizationHandler))).Methods("GET")
 	// go quiz.HubInstance.Run()
 
 	// r.HandleFunc("/ws/quiz", quiz.QuizWebSocketHandler) // WebSocket entry
