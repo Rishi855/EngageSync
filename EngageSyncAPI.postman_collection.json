@@ -115,6 +115,86 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "Add new organization only by superadmin role",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFkbWluQGthbmFrYS5jb20iLCJleHAiOjE3NDcwMzEzMDAsInJvbGUiOiJBZG1pbiIsInN1YiI6IjIwZDdhZDNkLTZmMjUtNDE0MS05YWU4LWY0ZDY4ODlhMTgwZiIsInRlbmFudF9pZCI6ImY1ODJhYTJkLTQzYzEtNDQ3NS1iMzViLWNkMmQ0ODJjNDYwMiJ9.x3qOquBGPo48WTvgM97Dvxtapv6YKjq7Jd09yijqQWw"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"orgName\": \"superadmin1\",\n    \"schemaName\": \"superadmin1\",\n    \"userName\": \"superadmin1\",\n    \"userEmail\": \"superadmin1@gmail.com\",\n    \"userPassword\": \"superadmin1\",\n    \"role\": \"Superadmin\",\n    \"photoURL\": \"https://example.com/photo.jpg\",\n    \"birthDate\": \"1990-01-01\",\n    \"department\": \"Engineering\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8000/api/add/organization",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"add",
+								"organization"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get all org by only superadmin role",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InN1cGVyYWRtaW5AZ21haWwuY29tIiwiZXhwIjoxNzQ3MDU0NTEwLCJyb2xlIjoiU3VwZXJhZG1pbiIsInN1YiI6IjI0YjdmNmM1LTRiMDYtNDY0Zi1hMWFkLTUzMDA4NjM4M2Q1ZSIsInRlbmFudF9pZCI6IjljNmJlNDYxLTM5MjQtNGY2NC05ZTQ1LWQxYzY4MWI3M2Y4OCJ9.1mtVym4FylcEhYksnz-KOCVkmaTgNf9xIIV4AnuQylY"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8000/api/organizations",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"organizations"
+							]
+						}
+					},
+					"response": []
 				}
 			]
 		},
