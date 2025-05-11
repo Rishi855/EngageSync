@@ -305,7 +305,7 @@ INSERT INTO GlobalUsers (
 ) VALUES (
     'b3f9d1de-12e2-445c-9c69-7a81c431fd0c',
     'admin@gmail.com',
-    'adminpassword',  -- Use hashed version in production
+    'admin',  -- Use hashed version in production
     'a6d892f4-39e8-4f5d-9c2e-d74f4a9be3cf',
     'Admin'
 )`
@@ -318,7 +318,7 @@ INSERT INTO kanaka.Users (
     'a6d892f4-39e8-4f5d-9c2e-d74f4a9be3cf',
     'admin',
     'admin@gmail.com',
-    'adminpassword',  -- Should be hashed
+    'admin',
     NULL,
     NULL,
     'Administration',
@@ -326,12 +326,14 @@ INSERT INTO kanaka.Users (
 )`
 
 	if _, err := db.Exec(query1); err != nil {
-		log.Println("Error executing query1:", err)
+		log.Println("executing query1:", err)
 	}
 	if _, err := db.Exec(query2); err != nil {
-		log.Println("Error executing query2:", err)
+		log.Println("executing query2:", err)
 	}
 	if _, err := db.Exec(query3); err != nil {
-		log.Println("Error executing query3:", err)
+		log.Println("executing query3:", err)
 	}
+	log.Println("Initial users inserted successfully\nDon't panic You can start using port given below")
+	log.Printf("\n\n#### User default username as '%s' and password as '%s'\n\n", "admin@gmail.com", "admin")
 }

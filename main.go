@@ -22,7 +22,7 @@ func main() {
 	// Create a new router
 	r := mux.NewRouter()
 	
-	InsertInitialUsers()
+	service.InsertInitialUsers()
 	// Prefix `/api/` for all API routes
 	apiRouter := r.PathPrefix("/api").Subrouter()
 
@@ -61,8 +61,4 @@ func main() {
 	// Start the server
 	log.Println("Server started at :8000")
 	log.Fatal(http.ListenAndServe(":8000", r))
-}
-
-func InsertInitialUsers() {
-	panic("unimplemented")
 }
