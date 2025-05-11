@@ -6,8 +6,9 @@ import (
 	"net/http"
 	// "os"
 	"time"
-	// STATIC "websocket-demo/VAR" // Assuming this is where TANENT is declared
 
+	"github.com/google/uuid"
+	// STATIC "websocket-demo/VAR" // Assuming this is where TANENT is declared
 	// "github.com/joho/godotenv"
 )
 
@@ -33,73 +34,136 @@ type Idea struct {
 
 // GetAllIdeasHandler retrieves all ideas
 func GetAllIdeasHandler(w http.ResponseWriter, r *http.Request) {
-	query := `
-		SELECT id, title, user_id, created_at, content, total_likes, total_comments 
-		FROM ` + SCHEMA + `.ideas
-	`
-	rows, err := queryRows(query)
+	rows, err := db.Query(`
+		SELECT 
+			ideaid, title, description, submittedby, submittedat,
+			isanonymous, isapproved, approvedby, approvedat
+		FROM kanaka.ideas
+	`)
 	if err != nil {
-		http.Error(w, "Error fetching ideas", http.StatusInternalServerError)
+		http.Error(w, "Failed to fetch ideas", http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
 
+	type Idea struct {
+		IdeaID      string     `json:"idea_id"`
+		Title       string     `json:"title"`
+		Description string     `json:"description"`
+		SubmittedBy string     `json:"submitted_by"`
+		SubmittedAt time.Time  `json:"submitted_at"`
+		IsAnonymous bool       `json:"is_anonymous"`
+		IsApproved  *bool      `json:"is_approved"` // Nullable
+		ApprovedBy  *string    `json:"approved_by"` // Nullable
+		ApprovedAt  *time.Time `json:"approved_at"` // Nullable
+	}
+
+	type Response struct {
+		Status  int    `json:"status"`
+		Message string `json:"message"`
+		Data    []Idea `json:"data,omitempty"`
+	}
+
 	var ideas []Idea
+
 	for rows.Next() {
 		var idea Idea
-		if err := rows.Scan(&idea.ID, &idea.Title, &idea.UserID, &idea.CreatedAt, &idea.Text, &idea.Likes, &idea.Comments); err != nil {
-			http.Error(w, "Error scanning ideas", http.StatusInternalServerError)
+		err := rows.Scan(
+			&idea.IdeaID,
+			&idea.Title,
+			&idea.Description,
+			&idea.SubmittedBy,
+			&idea.SubmittedAt,
+			&idea.IsAnonymous,
+			&idea.IsApproved,
+			&idea.ApprovedBy,
+			&idea.ApprovedAt,
+		)
+		if err != nil {
+			http.Error(w, "Error scanning idea data", http.StatusInternalServerError)
 			return
 		}
 		ideas = append(ideas, idea)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(ideas)
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(Response{
+		Status:  http.StatusOK,
+		Message: "Projects fetched successfully",
+		Data:    ideas,
+	})
 }
 
 // CreateIdeaHandler creates a new idea
 func CreateIdeaHandler(w http.ResponseWriter, r *http.Request) {
-	var idea Idea
+	type Response struct {
+		Status  int    `json:"status"`
+		Message string `json:"message"`
+	}
+
+	var idea struct {
+		Title       string `json:"title"`
+		Description string `json:"description"`
+		SubmittedBy string `json:"submitted_by"`
+		IsAnonymous bool   `json:"is_anonymous"`
+	}
+
 	if err := json.NewDecoder(r.Body).Decode(&idea); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{Status: http.StatusBadRequest, Message: "Invalid request body"})
 		return
 	}
 
-	query := `
-	INSERT INTO ` + SCHEMA + `.ideas 
-	(title, user_id, created_at, content, total_likes, total_comments) 
-	VALUES ($1, $2, $3, $4, $5, $6)
-	RETURNING id`
+	// Generate a new UUID for IdeaID
+	ideaID := uuid.New()
 
-	_, err := execQuery(query, idea.Title, idea.UserID, time.Now(), idea.Text, 0, 0)
+	// Insert into the database
+	_, err := db.Exec(`
+		INSERT INTO kanaka.ideas (
+			ideaid, title, description, submittedby, isanonymous
+		) VALUES ($1, $2, $3, $4, $5)`,
+		ideaID, idea.Title, idea.Description, idea.SubmittedBy, idea.IsAnonymous,
+	)
 	if err != nil {
-		http.Error(w, "Error creating idea", http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(Response{Status: http.StatusInternalServerError, Message: "Failed to create idea"})
 		return
 	}
-
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode("Idea created")
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(Response{Status: http.StatusOK, Message: "Idea created successfully"})
 }
 
 // DeleteIdeaHandler deletes an idea by its ID
 func DeleteIdeaHandler(w http.ResponseWriter, r *http.Request) {
+	type Response struct {
+		Status  int    `json:"status"`
+		Message string `json:"message"`
+	}
+
+	// Get IdeaID from query parameters
 	ideaID := r.URL.Query().Get("id")
 	if ideaID == "" {
-		http.Error(w, "Idea ID is required", http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{Status: http.StatusBadRequest, Message: "Missing idea ID"})
 		return
 	}
 
-	query := `
-		DELETE FROM ` + SCHEMA + `.ideas 
-		WHERE id = $1
-	`
-	_, err := execQuery(query, ideaID)
+	// Execute delete query
+	result, err := db.Exec(`DELETE FROM kanaka.ideas WHERE ideaid = $1`, ideaID)
 	if err != nil {
-		http.Error(w, "Error deleting idea", http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(Response{Status: http.StatusInternalServerError, Message: "Failed to delete idea"})
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode("Idea deleted")
+	// Check if any row was actually deleted
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(Response{Status: http.StatusNotFound, Message: "Idea not found"})
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(Response{Status: http.StatusOK, Message: "Idea deleted successfully"})
 }

@@ -9,11 +9,12 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
-func init() {
-    InitConfig()
-}
 
+func init() {
+	InitConfig()
+}
 
 type User struct {
 	ID        int       `json:"id"`
@@ -33,7 +34,7 @@ type CustomClaims struct {
 
 var jwtKey = []byte("my_secret_key")
 
-func SignupHandler(w http.ResponseWriter, r *http.Request) {
+func DemoRequest(w http.ResponseWriter, r *http.Request) {
 	var user User
 	// Decode the incoming request body
 	json.NewDecoder(r.Body).Decode(&user)
@@ -60,41 +61,55 @@ func SignupHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode("User created")
 }
+
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	var creds User
-	json.NewDecoder(r.Body).Decode(&creds)
+	err := json.NewDecoder(r.Body).Decode(&creds)
+	if err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
 
-	var storedUser User
-	// Retrieve the user from the database
-	err := db.QueryRow(`SELECT id, "name", email, "password", is_admin, created_at FROM users WHERE email=$1`, creds.Email).
-		Scan(&storedUser.ID, &storedUser.Name, &storedUser.Email, &storedUser.Password, &storedUser.IsAdmin, &storedUser.CreatedAt)
+	var storedUser struct {
+		ID       string
+		Email    string
+		Password string
+		TenantID string
+		Role     string
+	}
+
+	// Query GlobalUsers table
+	err = db.QueryRow(`
+		SELECT globaluserid, email, password, tenantid, role 
+		FROM globalusers 
+		WHERE email = $1`, creds.Email).
+		Scan(&storedUser.ID, &storedUser.Email, &storedUser.Password, &storedUser.TenantID, &storedUser.Role)
 
 	if err != nil {
 		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
 		return
 	}
 
-	// Check password (ensure to uncomment bcrypt logic when implementing hashing)
+	// Password check — uncomment this once you're hashing passwords
 	// err = bcrypt.CompareHashAndPassword([]byte(storedUser.Password), []byte(creds.Password))
 	if err != nil {
 		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
 		return
 	}
 
-	// Set token expiration time
+	// Set expiration time
 	expirationTime := time.Now().Add(24 * time.Hour)
 
-	// Create custom claims
-	claims := &CustomClaims{
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(expirationTime),
-			Subject:   fmt.Sprint(storedUser.ID),
-		},
-		IsAdmin:   storedUser.IsAdmin,
-		CreatedAt: storedUser.CreatedAt, // Keep it as time.Time, not a string
+	// Define custom claims
+	claims := jwt.MapClaims{
+		"sub":       storedUser.ID,
+		"email":     storedUser.Email,
+		"tenant_id": storedUser.TenantID,
+		"role":      storedUser.Role,
+		"exp":       expirationTime.Unix(),
 	}
 
-	// Create the token with custom claims
+	// Create token
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString(jwtKey)
 	if err != nil {
@@ -102,37 +117,127 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Send the token as a response
+	// Return the token
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"token": tokenString})
+}
+func getSchemaFromTenantID(tenantID string) string {
+	var schemaName string
+	err := db.QueryRow(`
+		SELECT SchemaName 
+		FROM TenantRegistry 
+		WHERE TenantID = $1 AND IsActive = TRUE
+	`, tenantID).Scan(&schemaName)
+
+	if err != nil {
+		// Log or handle error as needed (you might return empty string or panic depending on your strategy)
+		fmt.Printf("Error fetching schema for tenant %s: %v\n", tenantID, err)
+		return ""
+	}
+
+	return schemaName
 }
 
 func AddUserHandler(w http.ResponseWriter, r *http.Request) {
-
-	var user User
-	// Decode the incoming request body
-	json.NewDecoder(r.Body).Decode(&user)
-
-	// Set the current time for createdAt
-	createdAt := time.Now()
-
-	_, err := db.Exec(
-		`INSERT INTO users (tenant_id, name, email, is_admin, created_at, password) 
-		VALUES ('kanaka', $1, $2, $3, $4, $5)`,
-		user.Name, user.Email, user.IsAdmin, createdAt, user.Password,
-	)
+	userDetails, err := ExtractUserFromToken(r)
 	if err != nil {
-		log.Printf("User create error: %v", err)
-		if strings.Contains(err.Error(), "duplicate key") {
-			http.Error(w, "Email already exists", http.StatusConflict)
-			return
-		}
-		http.Error(w, "Error creating user", http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
 
-	// Return success response
+	if userDetails.Role != "Admin" {
+		http.Error(w, "Only admin can add users", http.StatusForbidden)
+		return
+	}
+
+	tenantID := userDetails.TenantID
+
+	var user struct {
+		UserID       string  `json:"user_id"`
+		Name         string  `json:"name"`
+		Email        string  `json:"email"`
+		PasswordHash string  `json:"password"`
+		PhotoURL     *string `json:"photo_url,omitempty"`
+		BirthDate    *string `json:"birth_date,omitempty"`
+		Department   *string `json:"department,omitempty"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	userRole := "User"
+
+	if user.UserID == "" {
+		user.UserID = uuid.New().String()
+	}
+
+	_, err = db.Exec(`
+		INSERT INTO globalusers (globaluserid, email, password, tenantid, role)
+		VALUES ($1, $2, $3, $4, $5)`,
+		user.UserID, user.Email, user.PasswordHash, tenantID, userRole)
+	if err != nil {
+		http.Error(w, "Error inserting into globalusers: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	schema := getSchemaFromTenantID(tenantID)
+	query := fmt.Sprintf(`INSERT INTO "%s".users 
+	(userID, tenantID, name, email, passwordhash, photourl, birthdate, department, role) 
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`, schema)
+
+	_, err = db.Exec(query,
+		user.UserID, tenantID, user.Name, user.Email, user.PasswordHash,
+		user.PhotoURL, user.BirthDate, user.Department, userRole)
+	if err != nil {
+		http.Error(w, "Error inserting into tenant users: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode("User Added")
+	json.NewEncoder(w).Encode(map[string]string{
+		"message": "User successfully created",
+		"user_id": user.UserID,
+	})
+}
+
+type AuthenticatedUser struct {
+	Role     string
+	TenantID string
+}
+
+func ExtractUserFromToken(r *http.Request) (*AuthenticatedUser, error) {
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+		return nil, fmt.Errorf("missing or invalid Authorization header")
+	}
+
+	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+
+	claims := jwt.MapClaims{}
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+		return jwtKey, nil
+	})
+	if err != nil || !token.Valid {
+		return nil, fmt.Errorf("unauthorized token")
+	}
+
+	role, ok := claims["role"].(string)
+	if !ok {
+		return nil, fmt.Errorf("missing role in token")
+	}
+
+	tenantID, ok := claims["tenant_id"].(string)
+	if !ok {
+		return nil, fmt.Errorf("missing tenant ID in token")
+	}
+
+	return &AuthenticatedUser{
+		Role:     role,
+		TenantID: tenantID,
+	}, nil
 }
 
 func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
@@ -181,5 +286,52 @@ func EnableCORS(next http.HandlerFunc) http.HandlerFunc {
 		}
 
 		next(w, r)
+	}
+}
+
+func InsertInitialUsers() {
+	query1 := `
+INSERT INTO TenantRegistry (
+    TenantID, OrgName, SchemaName
+) VALUES (
+    'a6d892f4-39e8-4f5d-9c2e-d74f4a9be3cf',
+    'Kanaka Org',
+    'kanaka'
+)`
+
+	query2 := `
+INSERT INTO GlobalUsers (
+    GlobalUserID, Email, Password, TenantID, Role
+) VALUES (
+    'b3f9d1de-12e2-445c-9c69-7a81c431fd0c',
+    'admin@gmail.com',
+    'adminpassword',  -- Use hashed version in production
+    'a6d892f4-39e8-4f5d-9c2e-d74f4a9be3cf',
+    'Admin'
+)`
+
+	query3 := `
+INSERT INTO kanaka.Users (
+    UserID, TenantID, Name, Email, PasswordHash, PhotoURL, BirthDate, Department, Role
+) VALUES (
+    'f18e304c-2e83-4f67-8f56-6824f579bb8f',
+    'a6d892f4-39e8-4f5d-9c2e-d74f4a9be3cf',
+    'admin',
+    'admin@gmail.com',
+    'adminpassword',  -- Should be hashed
+    NULL,
+    NULL,
+    'Administration',
+    'Admin'
+)`
+
+	if _, err := db.Exec(query1); err != nil {
+		log.Println("Error executing query1:", err)
+	}
+	if _, err := db.Exec(query2); err != nil {
+		log.Println("Error executing query2:", err)
+	}
+	if _, err := db.Exec(query3); err != nil {
+		log.Println("Error executing query3:", err)
 	}
 }

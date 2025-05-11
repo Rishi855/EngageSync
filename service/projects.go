@@ -2,11 +2,14 @@ package service
 
 import (
 	"encoding/json"
-	"strconv"
+	// "strconv"
+
 	// "log"
 	"net/http"
 	// "os"
 	"time"
+
+	"github.com/google/uuid"
 	// STATIC "websocket-demo/VAR" // Assuming this is where TANENT is declared
 	// "github.com/joho/godotenv"
 )
@@ -32,101 +35,128 @@ type Project struct {
 
 // GetAllIdeasHandler retrieves all ideas
 func GetAllProjectsHandler(w http.ResponseWriter, r *http.Request) {
-	query := `
-		SELECT id, name, description, created_at, updated_at, admin_id
-		FROM ` + SCHEMA + `.projects
-	`
-	rows, err := queryRows(query)
+	type Project struct {
+		ProjectID   string    `json:"project_id"`
+		Name        string    `json:"name"`
+		Description string    `json:"description"`
+		ManagerID   string    `json:"manager_id"`
+		CreatedAt   time.Time `json:"created_at"`
+	}
+
+	type Response struct {
+		Status  int       `json:"status"`
+		Message string    `json:"message"`
+		Data    []Project `json:"data,omitempty"`
+	}
+
+	rows, err := db.Query(`SELECT projectid, name, description, managerid, createdat FROM kanaka.projects`)
 	if err != nil {
-		http.Error(w, "Error fetching projects", http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(Response{Status: http.StatusInternalServerError, Message: "Failed to fetch projects"})
 		return
 	}
 	defer rows.Close()
 
 	var projects []Project
 	for rows.Next() {
-		var project Project
-		if err := rows.Scan(&project.ID, &project.Name, &project.Description, &project.CreatedAt, &project.UpdatedAt, &project.AdminId); err != nil {
-			http.Error(w, "Error scanning projects", http.StatusInternalServerError)
+		var proj Project
+		err := rows.Scan(&proj.ProjectID, &proj.Name, &proj.Description, &proj.ManagerID, &proj.CreatedAt)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(Response{Status: http.StatusInternalServerError, Message: "Error reading project data"})
 			return
 		}
-		projects = append(projects, project)
+		projects = append(projects, proj)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(projects)
-}
-func CreateProjectHandler(w http.ResponseWriter, r *http.Request) {
-	var project Project
-	var user User
 
-	// Decode the incoming request body to the 'project' struct
-	if err := json.NewDecoder(r.Body).Decode(&project); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
-		return
-	}
-
-	// Extract the user ID from the Authorization token (set by the authMiddleware)
-	userID := r.Header.Get("UserID")
-	if userID == "" {
-		http.Error(w, "User not authenticated", http.StatusUnauthorized)
-		return
-	}
-
-	// Convert userID (string) to int if necessary
-	// If your user ID is an integer, you may need to parse it
-	parsedUserID, err := strconv.Atoi(userID)
-	if err != nil {
-		http.Error(w, "Invalid user ID", http.StatusUnauthorized)
-		return
-	}
-
-	// Set the user ID
-	user.ID = parsedUserID
-
-	// Prepare SQL query to insert a new project
-	query := `
-	INSERT INTO ` + SCHEMA + `.projects 
-	(name, description, created_at, updated_at, admin_id) 
-	VALUES ($1, $2, $3, $4, $5)
-	RETURNING id` 
-
-	// Execute the query using the provided data and get the inserted ID
-	var projectID int
-	err = db.QueryRow(query, project.Name, project.Description, time.Now(), time.Now(), user.ID).Scan(&projectID)
-	if err != nil {
-		http.Error(w, "Error creating project", http.StatusInternalServerError)
-		return
-	}
-
-	// Send success response with the created project ID
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"message": "Project created successfully",
-		"id":      projectID, // Return the newly created project ID
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(Response{
+		Status:  http.StatusOK,
+		Message: "Projects fetched successfully",
+		Data:    projects,
 	})
+}
+
+
+func CreateProjectHandler(w http.ResponseWriter, r *http.Request) {
+	type Project struct {
+		Name        string `json:"name"`
+		Description string `json:"description"`
+		ManagerID   string `json:"manager_id"`
+	}
+
+	type Response struct {
+		Status  int    `json:"status"`
+		Message string `json:"message"`
+	}
+
+	var project Project
+	if err := json.NewDecoder(r.Body).Decode(&project); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{Status: http.StatusBadRequest, Message: "Invalid request body"})
+		return
+	}
+
+	if project.Name == "" || project.ManagerID == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{Status: http.StatusBadRequest, Message: "Missing required fields"})
+		return
+	}
+
+	projectID := uuid.New()
+
+	query := `
+		INSERT INTO kanaka.projects (projectid, name, description, managerid)
+		VALUES ($1, $2, $3, $4)
+	`
+
+	_, err := db.Exec(query, projectID, project.Name, project.Description, project.ManagerID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(Response{Status: http.StatusInternalServerError, Message: "Failed to create project"})
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(Response{Status: http.StatusCreated, Message: "Project created successfully"})
 }
 
 
 // DeleteIdeaHandler deletes an idea by its ID
 func DeleteProjectHandler(w http.ResponseWriter, r *http.Request) {
-	ideaID := r.URL.Query().Get("id")
-	if ideaID == "" {
-		http.Error(w, "Projects ID is required", http.StatusBadRequest)
+	type Response struct {
+		Status  int    `json:"status"`
+		Message string `json:"message"`
+	}
+
+	projectID := r.URL.Query().Get("id")
+	if projectID == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{Status: http.StatusBadRequest, Message: "Missing project ID"})
 		return
 	}
 
-	query := `
-		DELETE FROM ` + SCHEMA + `.projects 
-		WHERE id = $1
-	`
-	_, err := execQuery(query, ideaID)
+	query := `DELETE FROM kanaka.projects WHERE projectid = $1`
+	result, err := db.Exec(query, projectID)
 	if err != nil {
-		http.Error(w, "Error deleting projects", http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(Response{Status: http.StatusInternalServerError, Message: "Error deleting project"})
 		return
 	}
 
+	rowsAffected, err := result.RowsAffected()
+	if err != nil || rowsAffected == 0 {
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(Response{Status: http.StatusNotFound, Message: "Project not found or already deleted"})
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode("Projects deleted")
+	json.NewEncoder(w).Encode(Response{Status: http.StatusOK, Message: "Project deleted successfully"})
 }

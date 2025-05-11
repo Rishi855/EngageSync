@@ -2,10 +2,10 @@ package service
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"time"
-	
+
+	"github.com/google/uuid"
 	// "os"
 	// "github.com/joho/godotenv"
 	// STATIC "websocket-demo/VAR"
@@ -31,19 +31,39 @@ type Comment struct {
 
 // GetAllCommentsByIdeaID retrieves all comments for a specific idea
 func GetAllCommentsByIdeaIDHandler(w http.ResponseWriter, r *http.Request) {
-	ideaID := r.URL.Query().Get("idea_id")
+	// schema, err := GetSchemaByToken(w, r)
+
+	type Comment struct {
+		CommentID   string    `json:"comment_id"`
+		IdeaID      string    `json:"idea_id"`
+		CommentedBy string    `json:"commented_by"`
+		CommentText string    `json:"comment_text"`
+		CommentedAt time.Time `json:"commented_at"`
+	}
+
+	type Response struct {
+		Status  int       `json:"status"`
+		Message string    `json:"message"`
+		Data    []Comment `json:"data,omitempty"`
+	}
+
+	ideaID := r.URL.Query().Get("id")
 	if ideaID == "" {
-		http.Error(w, "Missing idea_id", http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{Status: http.StatusBadRequest, Message: "Missing idea ID"})
 		return
 	}
 
-	query := `SELECT id, idea_id, user_id, comment_text, created_at 
-			  FROM ` + SCHEMA + `.comments 
-			  WHERE idea_id = $1 ORDER BY created_at ASC`
+	rows, err := db.Query(`
+		SELECT commentid, ideaid, commentedby, commenttext, commentedat
+		FROM kanaka.ideacomments
+		WHERE ideaid = $1
+		ORDER BY commentedat ASC
+	`, ideaID)
 
-	rows, err := queryRows(query, ideaID)
 	if err != nil {
-		http.Error(w, "Error fetching comments", http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(Response{Status: http.StatusInternalServerError, Message: "Failed to retrieve comments"})
 		return
 	}
 	defer rows.Close()
@@ -51,89 +71,110 @@ func GetAllCommentsByIdeaIDHandler(w http.ResponseWriter, r *http.Request) {
 	var comments []Comment
 	for rows.Next() {
 		var c Comment
-		if err := rows.Scan(&c.ID, &c.IdeaID, &c.UserID, &c.CommentText, &c.CreatedAt); err != nil {
-			http.Error(w, "Error scanning comment", http.StatusInternalServerError)
+		if err := rows.Scan(&c.CommentID, &c.IdeaID, &c.CommentedBy, &c.CommentText, &c.CommentedAt); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(Response{Status: http.StatusInternalServerError, Message: "Error scanning comment row"})
 			return
 		}
 		comments = append(comments, c)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(comments)
+	json.NewEncoder(w).Encode(Response{
+		Status:  http.StatusOK,
+		Message: "Comments retrieved successfully",
+		Data:    comments,
+	})
 }
 
 // CreateCommentHandler creates a new comment and increments comment count
 func CreateCommentHandler(w http.ResponseWriter, r *http.Request) {
-	var comment Comment
-	if err := json.NewDecoder(r.Body).Decode(&comment); err != nil {
-		log.Println("Invalid request body")
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+	type CommentInput struct {
+		IdeaID      string `json:"idea_id"`
+		CommentedBy string `json:"commented_by"`
+		CommentText string `json:"comment_text"`
+	}
+
+	type Response struct {
+		Status  int    `json:"status"`
+		Message string `json:"message"`
+	}
+
+	var input CommentInput
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{Status: http.StatusBadRequest, Message: "Invalid request body"})
 		return
 	}
 
-	userID := r.Header.Get("UserID") // Retrieved from JWT or auth middleware
-	if userID == "" {
-		log.Println("Missing UserID in header")
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+	if input.IdeaID == "" || input.CommentedBy == "" || input.CommentText == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{Status: http.StatusBadRequest, Message: "Missing required fields"})
 		return
 	}
 
-	log.Printf("SCHEMA: %s", SCHEMA)
-	insertQuery := `INSERT INTO ` + SCHEMA + `.comments 
-                    (idea_id, user_id, comment_text, created_at) 
-                    VALUES ($1, $2, $3, $4)`
-	log.Printf("Executing query: %s", insertQuery)
-	_, err := execQuery(insertQuery, comment.IdeaID, userID, comment.CommentText, time.Now())
+	_, err := db.Exec(`
+		INSERT INTO kanaka.ideacomments (commentid, ideaid, commentedby, commenttext)
+		VALUES ($1, $2, $3, $4)
+	`, uuid.New().String(), input.IdeaID, input.CommentedBy, input.CommentText)
+
 	if err != nil {
-		log.Printf("Error executing query: %v", err)
-		http.Error(w, "Error creating comment", http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(Response{Status: http.StatusInternalServerError, Message: "Failed to create comment"})
 		return
 	}
 
-	updateQuery := `UPDATE ` + SCHEMA + `.ideas 
-                    SET comments = comments + 1 
-                    WHERE id = $1`
-	log.Printf("Executing update query: %s", updateQuery)
-	_, err = execQuery(updateQuery, comment.IdeaID)
-	if err != nil {
-		log.Println("Failed to increment comment count")
-	}
-
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode("Comment created")
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(Response{
+		Status:  http.StatusCreated,
+		Message: "Comment created successfully",
+	})
 }
 
 // DeleteCommentHandler deletes a comment and decrements comment count
 func DeleteCommentHandler(w http.ResponseWriter, r *http.Request) {
+	type Response struct {
+		Status  int    `json:"status"`
+		Message string `json:"message"`
+	}
+
 	commentID := r.URL.Query().Get("id")
 	if commentID == "" {
-		http.Error(w, "Missing comment id", http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{Status: http.StatusBadRequest, Message: "Missing comment ID"})
 		return
 	}
 
-	var ideaID int
-	selectQuery := `SELECT idea_id FROM ` + SCHEMA + `.comments WHERE id = $1`
+	var ideaID string
+	selectQuery := `SELECT ideaid FROM kanaka.ideacomments WHERE commentid = $1`
 	err := db.QueryRow(selectQuery, commentID).Scan(&ideaID)
 	if err != nil {
-		http.Error(w, "Comment not found", http.StatusNotFound)
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(Response{Status: http.StatusNotFound, Message: "Comment not found"})
 		return
 	}
 
-	deleteQuery := `DELETE FROM ` + SCHEMA + `.comments WHERE id = $1`
-	_, err = execQuery(deleteQuery, commentID)
+	deleteQuery := `DELETE FROM kanaka.ideacomments WHERE commentid = $1`
+	_, err = db.Exec(deleteQuery, commentID)
 	if err != nil {
-		http.Error(w, "Error deleting comment", http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(Response{Status: http.StatusInternalServerError, Message: "Failed to delete comment"})
 		return
 	}
 
-	updateQuery := `UPDATE ` + SCHEMA + `.ideas 
-					SET comments = comments - 1 
-					WHERE id = $1`
-	_, err = execQuery(updateQuery, ideaID)
-	if err != nil {
-		log.Println("Failed to decrement comment count")
-	}
-
+	// Optional: If you have a separate comment count in Ideas table, update it here
+	// Note: This logic assumes you store a count. If not, you can omit this block.
+	/*
+		updateQuery := `UPDATE kanaka.ideas SET comment_count = comment_count - 1 WHERE ideaid = $1`
+		_, err = db.Exec(updateQuery, ideaID)
+		if err != nil {
+			log.Println("Failed to update comment count:", err)
+		}
+	*/
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode("Comment deleted")
+	json.NewEncoder(w).Encode(Response{
+		Status:  http.StatusOK,
+		Message: "Comment deleted successfully",
+	})
 }

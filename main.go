@@ -8,9 +8,7 @@ import (
 	_ "github.com/lib/pq"
 
 	service "github.com/Rishi855/engagesync/service"
-
 	// quiz "github.com/Rishi855/engagesync/quiz"
-
 )
 
 var SCHEMA string
@@ -23,12 +21,13 @@ func init() {
 func main() {
 	// Create a new router
 	r := mux.NewRouter()
-
+	
+	InsertInitialUsers()
 	// Prefix `/api/` for all API routes
 	apiRouter := r.PathPrefix("/api").Subrouter()
 
 	// Define routes under `/api/` and apply CORS middleware
-	apiRouter.HandleFunc("/signup", service.EnableCORS(service.SignupHandler)).Methods("POST")
+	// apiRouter.HandleFunc("/demo/request", service.EnableCORS(service.DemoRequest)).Methods("POST")
 	apiRouter.HandleFunc("/login", service.EnableCORS(service.LoginHandler)).Methods("GET")
 
 	apiRouter.HandleFunc("/ideas", service.EnableCORS(service.AuthMiddleware(service.GetAllIdeasHandler))).Methods("GET")
@@ -47,12 +46,11 @@ func main() {
 	apiRouter.HandleFunc("/project/member", service.EnableCORS(service.AuthMiddleware(service.CreateProjectMemberHandler))).Methods("POST")
 	apiRouter.HandleFunc("/project/member/delete", service.EnableCORS(service.AuthMiddleware(service.DeleteProjectMemberHandler))).Methods("DELETE")
 
-	apiRouter.HandleFunc("/technologies", service.EnableCORS(service.AuthMiddleware(service.GetAllTechnologiesHandler))).Methods("GET")
-	apiRouter.HandleFunc("/roles", service.EnableCORS(service.AuthMiddleware(service.GetAllRolesHandler))).Methods("GET")
+	// apiRouter.HandleFunc("/technologies", service.EnableCORS(service.AuthMiddleware(service.GetAllTechnologiesHandler))).Methods("GET")
+	// apiRouter.HandleFunc("/roles", service.EnableCORS(service.AuthMiddleware(service.GetAllRolesHandler))).Methods("GET")
 	apiRouter.HandleFunc("/all/users", service.EnableCORS(service.AuthMiddleware(service.GetAllUsersHandler))).Methods("GET")
 
-
-	apiRouter.HandleFunc("/add/user", service.EnableCORS(service.AuthMiddleware(service.AddUserHandler))).Methods("POST")	
+	apiRouter.HandleFunc("/add/user", service.EnableCORS(service.AuthMiddleware(service.AddUserHandler))).Methods("POST")
 
 	// go quiz.HubInstance.Run()
 
@@ -63,4 +61,8 @@ func main() {
 	// Start the server
 	log.Println("Server started at :8000")
 	log.Fatal(http.ListenAndServe(":8000", r))
+}
+
+func InsertInitialUsers() {
+	panic("unimplemented")
 }

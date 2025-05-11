@@ -2,7 +2,10 @@ package service
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"time"
+
 	Constant "github.com/Rishi855/engagesync/VAR"
 )
 
@@ -35,36 +38,58 @@ func GetAllRolesHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetAllUsersHandler(w http.ResponseWriter, r *http.Request) {
-	query := `
-		SELECT id, tenant_id, name, email, is_admin, created_at, password
-		FROM users
-	`
-	rows, err := queryRows(query)
+	schema, err := GetSchemaByToken(w, r)
+	query := fmt.Sprintf(`SELECT userid, tenantid, name, email, photourl, birthdate, department, role FROM "%s".users`, schema)
+
+	rows, err := db.Query(query)
 	if err != nil {
-		http.Error(w, "Error fetching users", http.StatusInternalServerError)
+		http.Error(w, "Error fetching users: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
 
-	var users []User
+	var users []map[string]interface{}
 
 	for rows.Next() {
-		var user User
-		if err := rows.Scan(
-			&user.ID,
-			&user.TanentId,
-			&user.Name,
-			&user.Email,
-			&user.IsAdmin,
-			&user.CreatedAt,
-			&user.Password,
-		); err != nil {
-			http.Error(w, "Error scanning user data", http.StatusInternalServerError)
+		var (
+			userID     string
+			tenantID   string
+			name       string
+			email      string
+			photoURL   *string
+			birthDate  *time.Time
+			department *string
+			role       string
+		)
+
+		if err := rows.Scan(&userID, &tenantID, &name, &email, &photoURL, &birthDate, &department, &role); err != nil {
+			http.Error(w, "Error scanning users: "+err.Error(), http.StatusInternalServerError)
 			return
+		}
+
+		user := map[string]interface{}{
+			"user_id":    userID,
+			"tenant_id":  tenantID,
+			"name":       name,
+			"email":      email,
+			"photo_url":  photoURL,
+			"birth_date": birthDate,
+			"department": department,
+			"role":       role,
 		}
 		users = append(users, user)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(users)
+}
+
+func GetSchemaByToken(w http.ResponseWriter, r *http.Request) (string, error) {
+	userDetails, err := ExtractUserFromToken(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return "", err
+	}
+	schema := getSchemaFromTenantID(userDetails.TenantID)
+	return schema,nil
 }

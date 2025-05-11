@@ -1,9 +1,0 @@
-CREATE TABLE users (
-    id SERIAL PRIMARY KEY,
-    tenant_id TEXT NOT NULL,
-    name TEXT NOT NULL,
-    email TEXT UNIQUE NOT NULL,
-    is_admin BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    password TEXT NOT NULL
-);
