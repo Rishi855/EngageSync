@@ -11,17 +11,17 @@ import (
 	// quiz "github.com/Rishi855/engagesync/quiz"
 )
 
-var SCHEMA string
+// var SCHEMA string
 
-func init() {
-	service.InitConfig()
-}
+// func init() {
+// 	service.InitConfig()
+// }
 
 // Main function
 func main() {
 	// Create a new router
 	r := mux.NewRouter()
-	
+
 	service.InsertInitialUsers()
 	// Prefix `/api/` for all API routes
 	apiRouter := r.PathPrefix("/api").Subrouter()

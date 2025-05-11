@@ -12,10 +12,6 @@ import (
 	"github.com/google/uuid"
 )
 
-func init() {
-	InitConfig()
-}
-
 type User struct {
 	ID        int       `json:"id"`
 	TanentId  string    `json:"tanent_id"`
