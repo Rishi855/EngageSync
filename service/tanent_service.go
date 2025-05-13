@@ -77,7 +77,9 @@ func AddOrganizationHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// ✅ Generate migration file for the schema
-	migrationFilename := fmt.Sprintf("migrations/%s_%d_adding_%s_schema.up.sql", time.Now().Format("20060102150405"), time.Now().Unix(), creds.SchemaName)
+	migrationFilename := fmt.Sprintf("migrations/%06d_adding_%s_schema.up.sql",
+		time.Now().Unix()%1000000, // This will give last 6 digits
+		creds.SchemaName)
 	migrationContent := strings.ReplaceAll(schemaTemplate, "kanaka", creds.SchemaName)
 
 	if err = os.WriteFile(migrationFilename, []byte(migrationContent), 0644); err != nil {
@@ -308,5 +310,15 @@ CREATE TABLE kanaka.BirthdayWishes (
     SentAt TIMESTAMP NOT NULL DEFAULT NOW(),
     FOREIGN KEY (UserID) REFERENCES kanaka.Users(UserID),
     FOREIGN KEY (WishedBy) REFERENCES kanaka.Users(UserID)
+);
+CREATE TABLE kanaka.GuessImages (
+    ImageID UUID PRIMARY KEY,
+    ImageURL TEXT NOT NULL,
+    Title TEXT NOT NULL,
+    Description TEXT,
+    Category guess_image_category NOT NULL,
+    UploadedAt TIMESTAMP DEFAULT NOW(),
+    UploadedBy UUID, -- could reference a user ID from GlobalUsers
+    IsCompleted BOOLEAN DEFAULT FALSE
 );
 `
