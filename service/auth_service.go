@@ -316,7 +316,7 @@ INSERT INTO GlobalUsers (
 INSERT INTO kanaka.Users (
     UserID, TenantID, Name, Email, PasswordHash, PhotoURL, BirthDate, Department, Role
 ) VALUES (
-    'f18e304c-2e83-4f67-8f56-6824f579bb8f',
+    'f18e304c-2e83-4f67-8f56-6824f579bb6f',
     'a6d892f4-39e8-4f5d-9c2e-d74f4a9be3cf',
     'admin',
     'admin@gmail.com',
@@ -325,6 +325,31 @@ INSERT INTO kanaka.Users (
     NULL,
     'Administration',
     'Admin'
+)`
+
+	query4 := `INSERT INTO GlobalUsers (
+    GlobalUserID, Email, Password, TenantID, Role
+) VALUES (
+    'b3f9d1de-12e2-445c-9c69-7a81c431fd0d',
+    'superadmin@gmail.com',
+    'superadmin',  -- Use hashed version in production
+    'a6d892f4-39e8-4f5d-9c2e-d74f4a9be3cf',
+    'Superadmin'
+)`
+
+	query5 := `
+INSERT INTO kanaka.Users (
+    UserID, TenantID, Name, Email, PasswordHash, PhotoURL, BirthDate, Department, Role
+) VALUES (
+    'f18e304c-2e83-4f67-8f56-6824f579bb6f',
+    'a6d892f4-39e8-4f5d-9c2e-d74f4a9be3cf',
+    'superadmin',
+    'superadmin@gmail.com',
+    'superadmin',
+    NULL,
+    NULL,
+    'Administration',
+    'Superadmin'
 )`
 
 	if _, err := db.Exec(query1); err != nil {
@@ -336,6 +361,13 @@ INSERT INTO kanaka.Users (
 	if _, err := db.Exec(query3); err != nil {
 		log.Println("executing query3:", err)
 	}
+	if _, err := db.Exec(query4); err != nil {
+		log.Println("executing query3:", err)
+	}
+	if _, err := db.Exec(query5); err != nil {
+		log.Println("executing query3:", err)
+	}
 	log.Println("Initial users inserted successfully\nDon't panic You can start using port given below")
 	log.Printf("\n\n#### User default username as '%s' and password as '%s'\n\n", "admin@gmail.com", "admin")
+	log.Printf("\n\n#### User default username as '%s' and password as '%s'\n\n", "superadmin@gmail.com", "superadmin")
 }
