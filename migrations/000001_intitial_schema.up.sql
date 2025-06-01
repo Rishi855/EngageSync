@@ -1,4 +1,4 @@
-CREATE TYPE user_role AS ENUM ('Admin', 'User');
+CREATE TYPE user_role AS ENUM ('Admin', 'User','Superadmin');
 
 -- Create TenantRegistry table
 CREATE TABLE TenantRegistry (
