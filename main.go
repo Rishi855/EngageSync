@@ -1,21 +1,38 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/gorilla/mux"
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 
 	service "github.com/Rishi855/engagesync/service"
 	// quiz "github.com/Rishi855/engagesync/quiz"
 )
 
-// var SCHEMA string
+func init() {
+    err := godotenv.Load(".env")
+    if err != nil {
+        log.Println("Error loading .env file:", err)
+    }
 
-// func init() {
-// 	service.InitConfig()
-// }
+    log.Println("JWT_SECRET =", os.Getenv("JWT_SECRET"))
+
+	host := os.Getenv("DB_HOST") // should be 'db' in container
+	port := os.Getenv("DB_PORT") // 5432
+	user := os.Getenv("DB_USER")
+	password := os.Getenv("DB_PASSWORD")
+	dbname := os.Getenv("DB_NAME")
+	sslmode := os.Getenv("DB_SSLMODE")
+
+	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
+		host, port, user, password, dbname, sslmode)
+	fmt.Println("Connecting to DB with:", dsn)
+}
 
 // Main function
 func main() {
@@ -28,6 +45,13 @@ func main() {
 
 	// Define routes under `/api/` and apply CORS middleware
 	// apiRouter.HandleFunc("/demo/request", service.EnableCORS(service.DemoRequest)).Methods("POST")
+
+	apiRouter.HandleFunc("/", service.EnableCORS(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"message": "Hello, EngageSync API is running!"}`))
+	})).Methods("GET")
+
 	apiRouter.HandleFunc("/login", service.EnableCORS(service.LoginHandler)).Methods("GET")
 
 	apiRouter.HandleFunc("/ideas", service.EnableCORS(service.AuthMiddleware(service.GetAllIdeasHandler))).Methods("GET")
@@ -63,6 +87,19 @@ func main() {
 	// apiRouter.HandleFunc("/start-quiz", service.EnableCORS(service.AuthMiddleware(quiz.StartQuizHandler))).Methods("POST")
 
 	// Start the server
-	log.Println("Server started at :8000")
-	log.Fatal(http.ListenAndServe(":8000", r))
+	// Add this just before http.ListenAndServe
+	log.Printf("Available routes:")
+	err := r.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
+		pathTemplate, err := route.GetPathTemplate()
+		if err == nil {
+			methods, _ := route.GetMethods()
+			log.Printf("Route: %s [%s]", pathTemplate, methods)
+		}
+		return nil
+	})
+	if err != nil {
+		log.Printf("Error walking routes: %v", err)
+	}
+	log.Println("Server started at :8080")
+	log.Fatal(http.ListenAndServe(":8080", r))
 }
