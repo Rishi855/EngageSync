@@ -1,3 +1,43 @@
+# EngageSync - Running the Project Using Docker
+
+# This project uses Go backend and PostgreSQL database, and can be run using Docker in any of the following three ways.
+
+# --- Method 1: Clone GitHub Repo and Run with Docker Compose ---
+
+# 1. Clone the repository:
+git clone https://github.com/Rishi855/EngageSync.git
+cd EngageSync
+
+# 2. Run Docker Compose to pull images and start containers:
+docker-compose up -d
+
+# 3. To stop and remove containers:
+docker-compose down
+
+# --- Method 2: Use the docker-compose.yml File Directly ---
+
+# 1. Place the docker-compose.yml file in your working directory.
+
+# 2. Pull the required Docker images:
+docker-compose pull
+
+# 3. Start the containers:
+docker-compose up -d
+
+# 4. To stop the containers:
+docker-compose down
+
+# --- Method 3: Use the Shell Script Without Docker Compose ---
+
+# You can run the project using a shell script (start-without-docker-compose.sh) without Docker Compose.
+
+./start-engagesync.sh
+
+# Notes:
+# Make sure ports 5432 and 8080 are free before running containers.
+# Data is persisted using Docker volume engagesync_postgres-data.
+# Backend Docker image is hosted on Docker Hub: rushikesh855/engagesync-backend.
+
 # Engagesync DB Setup
 
 This project is built using **Go** and **PostgreSQL**, with database migrations handled using the **`golang-migrate`** package. Below are the installation steps and instructions for setting up the environment and running the project.
